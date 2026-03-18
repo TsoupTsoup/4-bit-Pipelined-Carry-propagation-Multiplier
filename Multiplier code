@@ -1,0 +1,219 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+
+entity multiplier_4_bit_pipeline is
+    Port ( A : in STD_LOGIC_VECTOR (3 downto 0);
+           B : in STD_LOGIC_VECTOR (3 downto 0);
+           --Cin : in STD_LOGIC;
+           Clk : in STD_LOGIC;
+           Product : out STD_LOGIC_VECTOR (7 downto 0));
+end multiplier_4_bit_pipeline;
+
+architecture hybrid of multiplier_4_bit_pipeline is
+
+    component Synchronous_FA is
+        Port ( A : in STD_LOGIC;
+           B : in STD_LOGIC;
+           Cin : in STD_LOGIC;
+           Cout : out STD_LOGIC;
+           Sum : out STD_LOGIC;
+           Clk : in STD_LOGIC);
+    end component;
+
+    signal input : std_logic_vector(15 downto 0);
+    signal Cout0 : std_logic_vector(4 downto 0);
+    signal Cout1 : std_logic_vector(4 downto 0);
+    signal Cout2 : std_logic_vector(4 downto 0);
+    signal Cout3 : std_logic_vector(2 downto 0);
+    signal Sum0 : std_logic_vector(8 downto 0);
+    signal Sum1 : std_logic_vector(7 downto 0);
+    signal Sum2 : std_logic_vector(6 downto 0);
+    signal Sum3 : std_logic_vector(5 downto 0);
+    signal Sum4 : std_logic_vector(3 downto 0);
+    signal Sum5 : std_logic_vector(1 downto 0);
+    signal B0d : std_logic_vector(2 downto 0);
+    signal B1d : std_logic_vector(4 downto 0);
+    signal B2d : std_logic_vector(6 downto 0);
+    signal B3d : std_logic_vector(8 downto 0);
+    signal A0d : std_logic_vector(5 downto 0);
+    signal A1d : std_logic_vector(6 downto 0);
+    signal A2d : std_logic_vector(7 downto 0);
+    signal A3d : std_logic_vector(8 downto 0);
+    
+
+begin
+    
+    input(0) <= A(0) and B(0);
+    x0: Synchronous_FA port map(A=>input(0),B=>'0',Cin=>'0',Clk=>Clk,Cout=>Cout0(0),Sum=>Sum0(0));
+    
+    input(1) <= A1d(0) and B0d(0);
+    x1: Synchronous_FA port map(A=>input(1),B=>'0',Cin=>Cout0(0),Clk=>Clk,Cout=>Cout0(1),Sum=>Sum1(0));
+    
+    input(2) <= A2d(1) and B0d(1);
+    input(3) <= A0d(1) and B1d(1);
+    x2: Synchronous_FA port map(A=>input(2),B=>'0',Cin=>Cout0(1),Clk=>Clk,Cout=>Cout0(2),Sum=>Sum2(0));
+    x3: Synchronous_FA port map(A=>input(3),B=>Sum1(0),Cin=>'0',Clk=>Clk,Cout=>Cout1(0),Sum=>Sum1(1));
+    
+    input(4) <= A3d(2) and B0d(2);
+    input(5) <= A1d(2) and B1d(2);
+    x4: Synchronous_FA port map(A=>input(4),B=>'0',Cin=>Cout0(2),Clk=>Clk,Cout=>Cout0(3),Sum=>Sum3(0));
+    x5: Synchronous_FA port map(A=>input(5),B=>Sum2(0),Cin=>Cout1(0),Clk=>Clk,Cout=>Cout1(1),Sum=>Sum2(1));
+    
+    input(6) <= A2d(3) and B1d(3);
+    input(7) <= A0d(3) and B2d(3);
+    x6: Synchronous_FA port map(A=>input(6),B=>Sum3(0),Cin=>Cout1(1),Clk=>Clk,Cout=>Cout1(2),Sum=>Sum3(1));
+    x7: Synchronous_FA port map(A=>input(7),B=>Sum2(1),Cin=>'0',Clk=>Clk,Cout=>Cout2(0),Sum=>Sum2(2));
+    
+    input(8) <= A3d(4) and B1d(4);
+    input(9) <= A1d(4) and B2d(4);
+    x8: Synchronous_FA port map(A=>input(8),B=>Cout0(4),Cin=>Cout1(2),Clk=>Clk,Cout=>Cout1(3),Sum=>Sum4(0));
+    x9: Synchronous_FA port map(A=>input(9),B=>Sum3(1),Cin=>Cout2(0),Clk=>Clk,Cout=>Cout2(1),Sum=>Sum3(2));
+    
+    input(10) <= A2d(5) and B2d(5);
+    input(11) <= A0d(5) and B3d(5);
+    x10: Synchronous_FA port map(A=>input(10),B=>Sum4(0),Cin=>Cout2(1),Clk=>Clk,Cout=>Cout2(2),Sum=>Sum4(1));
+    x11: Synchronous_FA port map(A=>input(11),B=>Sum3(2),Cin=>'0',Clk=>Clk,Cout=>Cout3(0),Sum=>Sum3(3));
+    
+    input(12) <= A3d(6) and B2d(6);
+    input(13) <= A1d(6) and B3d(6);
+    x12: Synchronous_FA port map(A=>input(12),B=>Cout1(4),Cin=>Cout2(2),Clk=>Clk,Cout=>Cout2(3),Sum=>Sum5(0));
+    x13: Synchronous_FA port map(A=>input(13),B=>Sum4(1),Cin=>Cout3(0),Clk=>Clk,Cout=>Cout3(1),Sum=>Sum4(2));
+    
+    input(14) <= A2d(7) and B3d(7);
+    x14: Synchronous_FA port map(A=>input(14),B=>Sum5(0),Cin=>Cout3(1),Clk=>Clk,Cout=>Cout3(2),Sum=>Sum5(1));
+    
+    input(15) <= A3d(8) and B3d(8);
+    x15: Synchronous_FA port map(A=>input(15),B=>Cout2(4),Cin=>Cout3(2),Clk=>Clk,Cout=>Product(7),Sum=>Product(6));
+    
+    
+    
+    pathing: process(Clk)
+    begin
+    if(rising_edge(Clk)) then
+        --step 1
+        B0d(0)<=B(0);
+        B1d(0)<=B(1);
+        B2d(0)<=B(2);
+        B3d(0)<=B(3);
+        A0d(0)<=A(0);
+        A1d(0)<=A(1);
+        A2d(0)<=A(2);
+        A3d(0)<=A(3);
+        
+        --step 2
+        B0d(1)<=B0d(0);
+        B1d(1)<=B1d(0);
+        B2d(1)<=B2d(0);
+        B3d(1)<=B3d(0);
+        A0d(1)<=A0d(0);
+        A1d(1)<=A1d(0);
+        A2d(1)<=A2d(0);
+        A3d(1)<=A3d(0);
+        Sum0(1)<=Sum0(0);
+        
+        --step 3
+        B0d(2)<=B0d(1);
+        B1d(2)<=B1d(1);
+        B2d(2)<=B2d(1);
+        B3d(2)<=B3d(1);
+        A0d(2)<=A0d(1);
+        A1d(2)<=A1d(1);
+        A2d(2)<=A2d(1);
+        A3d(2)<=A3d(1);
+        Sum0(2)<=Sum0(1);
+        
+        --step 4
+        --B0d(3)<=B0d(2);
+        B1d(3)<=B1d(2);
+        B2d(3)<=B2d(2);
+        B3d(3)<=B3d(2);
+        A0d(3)<=A0d(2);
+        A1d(3)<=A1d(2);
+        A2d(3)<=A2d(2);
+        A3d(3)<=A3d(2);
+        Sum0(3)<=Sum0(2);
+        Sum1(2)<=Sum1(1);
+        
+        --step 5
+        --B0d(4)<=B0d(3);
+        B1d(4)<=B1d(3);
+        B2d(4)<=B2d(3);
+        B3d(4)<=B3d(3);
+        A0d(4)<=A0d(3);
+        A1d(4)<=A1d(3);
+        A2d(4)<=A2d(3);
+        A3d(4)<=A3d(3);
+        Sum0(4)<=Sum0(3);
+        Sum1(3)<=Sum1(2);
+        Cout0(4)<=Cout0(3);
+        
+        --step 6
+        --B0d(5)<=B0d(4);
+        --B1d(5)<=B1d(4);
+        B2d(5)<=B2d(4);
+        B3d(5)<=B3d(4);
+        A0d(5)<=A0d(4);
+        A1d(5)<=A1d(4);
+        A2d(5)<=A2d(4);
+        A3d(5)<=A3d(4);
+        Sum0(5)<=Sum0(4);
+        Sum1(4)<=Sum1(3);
+        Sum2(3)<=Sum2(2);
+        
+        --step 7
+        --B0d(6)<=B0d(5);
+        --B1d(6)<=B1d(5);
+        B2d(6)<=B2d(5);
+        B3d(6)<=B3d(5);
+        --A0d(6)<=A0d(5);
+        A1d(6)<=A1d(5);
+        A2d(6)<=A2d(5);
+        A3d(6)<=A3d(5);
+        Sum0(6)<=Sum0(5);
+        Sum1(5)<=Sum1(4);
+        Sum2(4)<=Sum2(3);
+        Cout1(4)<=Cout1(3);
+        
+        --step 8
+        --B0d(7)<=B0d(6);
+        --B1d(7)<=B1d(6);
+        --B2d(7)<=B2d(6);
+        B3d(7)<=B3d(6);
+        --A0d(7)<=A0d(6);
+        --A1d(7)<=A1d(6);
+        A2d(7)<=A2d(6);
+        A3d(7)<=A3d(6);
+        Sum0(7)<=Sum0(6);
+        Sum1(6)<=Sum1(5);
+        Sum2(5)<=Sum2(4);
+        Sum3(4)<=Sum3(3);
+        
+        --step 9
+        --B0d(8)<=B0d(7);
+        --B1d(8)<=B1d(7);
+        --B2d(8)<=B2d(7);
+        B3d(8)<=B3d(7);
+        --A0d(8)<=A0d(7);
+        --A1d(8)<=A1d(7);
+        --A2d(8)<=A2d(7);
+        A3d(8)<=A3d(7);
+        Sum0(8)<=Sum0(7);
+        Sum1(7)<=Sum1(6);
+        Sum2(6)<=Sum2(5);
+        Sum3(5)<=Sum3(4);
+        Sum4(3)<=Sum4(2);
+        Cout2(4)<=Cout2(3);  
+        
+        --step 10
+        Product(0)<=Sum0(8);
+        Product(1)<=Sum1(7);
+        Product(2)<=Sum2(6);
+        Product(3)<=Sum3(5);
+        Product(4)<=Sum4(3);
+        Product(5)<=Sum5(1);        
+     end if;
+     end process pathing;
+
+
+end hybrid;
